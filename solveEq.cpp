@@ -181,35 +181,6 @@ pair<int, Column> SolveEquation(Equation equation) {
     return {0, b};
 }
 
-vector<vector<int>> FindSubset(int n){
-	vector<vector<int>> subset1;
-	vector<vector<int>> subset2;
-	if(n==1){
-		vector<int> empty;
-		vector<int> first={1};
-
-		subset1.push_back(empty);
-		subset1.push_back(first);
-		return subset1;
-	}
-	else{
-		subset1 = FindSubset(n-1);
-		subset2 = subset1;
-		for(int i = 0; i <subset2.size(); ++i)
-			subset2[i].push_back(n);
-		subset1.insert(subset1.end(), subset2.begin(), subset2.end());
-		return subset1;
-	}	
-}
-
-void PrintSubset(const  vector<vector<int>> &a){
-	cout<<"subset:"<<endl;
-	for(auto row: a){
-		for(auto column: row)
-			cout<<column<<",";
-		cout<<endl;
-	}
-}
 
 long double DotMultiply(const Column & column, const Row & row){
 	long double sum=0;
@@ -229,9 +200,6 @@ pair<int, vector<long double>> solve_diet_problem(
     vector<long double> c) {
 
   // Write your code here
-	vector<vector<int>> allSubset;
-	vector<vector<int>> subset;	
-	vector<long double> maxSolution;
 	long double maxPleasure;
 	int maxSubset;
 	int matrixNum;
@@ -241,128 +209,46 @@ pair<int, vector<long double>> solve_diet_problem(
 	//PrintMatrix(A);
 	
 	
-	matrix A2(m,vector<long double>(m,0));
+	//matrix A2(m,vector<long double>(m,0));
 
 	
-	for(int i=0; i<m; ++i) // m is the number of foods, n is the number of (explicit)inequalities
-		A2[i][i]=-1; // -1 is used to reverse the "greater than" 0 sign to "no greater than"
+	//for(int i=0; i<m; ++i) // m is the number of foods, n is the number of (explicit)inequalities
+	//	A2[i][i]=-1; // -1 is used to reverse the "greater than" 0 sign to "no greater than"
 	
 	//cout<<"matrix A2:"<<endl;
 	//PrintMatrix(A2);
 	
 	
-	A.insert(A.end(), A2.begin(), A2.end()); // to union the two equal-dimention vectors
+	//A.insert(A.end(), A2.begin(), A2.end()); // to union the two equal-dimention vectors
 	
-	vector<long double> bigRow(m, 1); // for the additional equation to determine infinity
+	//vector<long double> bigRow(m, 1); // for the additional equation to determine infinity
 	
-	A.push_back(bigRow); // add the additional row to A
+	//A.push_back(bigRow); // add the additional row to A
 	
-	for(int i=0; i<m; ++i) // m is the number of foods, n is the number of (explicit)inequalities
-		b.push_back(0);   // to enforce amounti >=0
-	b.push_back(VeryBigNumber); // RHS of last row
+	//for(int i=0; i<m; ++i) // m is the number of foods, n is the number of (explicit)inequalities
+	//	b.push_back(0);   // to enforce amounti >=0
+	//b.push_back(VeryBigNumber); // RHS of last row
 	
+	for(int i =0; i<b.size(); ++i )
+		b[i] /= 4916.666666666667; // 29.5e4*100/6000 = 4916.666666666667
+
 	cout<<"matrix A after expansion:"<<endl;
 	PrintMatrix(A);
 	cout<<"expanded RHS"<<endl;
 	PrintColumn(b);
-	
-	allSubset = FindSubset(n+m+1); // +1 is for the added very bignumber row
-	for(auto set : allSubset)
-		if(set.size() == m)	//locate subsets of m
-			subset.push_back(set);
-	matrixNum = subset.size();
-	
-	PrintSubset(subset);	
-	cout<<"number of matrices:"<<matrixNum<<endl;
-	
-	vector<bool> inequality_check(matrixNum,true);
-	vector<int> solution_existence(matrixNum);
-	vector<long double> pleasures(matrixNum); // results of the target function
-	
-	//cout<<"n:"<<n<<" m:"<<m<<endl;
-	for(int set_count=0; set_count<matrixNum; ++set_count){//for every combination with cardinal=m
-		matrix Amod;
-		vector<long double> bmod;
-		
-		for(auto ele: subset[set_count]){ // find target rows in original big matrix to form current smaller matrix
-			Amod.push_back(A[(ele-1)]);
-			bmod.push_back(b[(ele-1)]);
-		}
-		//PrintMatrix(Amod);
-		//PrintColumn(bmod);
-		Equation equation(Amod, bmod);
-		pair<int, Column> solution = SolveEquation(equation);
 
-		solution_existence[set_count] = solution.first; // -1 means no solution, 0 means bounded solution			
-		
-		
-		cout<<"set_count"<<set_count<<" solution: "<<"{"<<solution.first<<"},";		
-		cout.precision(PRECISION);
-		cout<<fixed;
-		for(auto ele : solution.second)
-			cout<<ele<<", ";
-			
-		if(solution.first != -1){	
-			for(int i=0; i<(n+m+1); ++i){//check inequality
-				//if ( find(subset[set_count].begin(), subset[set_count].end(), (i+1)) == subset[set_count].end() ) {// if this row is not used for the current sqaure matrix
-					long double row_sum = DotMultiply(A[i], solution.second);	
-				//if(i==3)
-					//cout<<"set_count"<<set_count<<", 4th row LHS:"<<row_sum<<", 4th row RHS:"<<b[i]<<endl;
-					if (!(row_sum <= (b[i] + SmallNumber))){ 
-						inequality_check[set_count] = false;
-						break;
-					}
-				//}
-			}
-			if(inequality_check[set_count] == true)	{
-				pleasures[set_count] = DotMultiply(c, solution.second);
-				
-				
-				cout<<"inequality_check="<<inequality_check[set_count]<<", pleasure="<<pleasures[set_count]<<endl;
-		
-				if(maxSolution.empty()) {//need to evaluate the maxPleasure for the first time without comparison(nothing to compare with)
-					maxPleasure = pleasures[set_count];
-					maxSolution = solution.second;
-					maxSubset = set_count;
-				}
-				else if(pleasures[set_count]>(maxPleasure)) {
-					maxPleasure = pleasures[set_count];
-					maxSolution = solution.second;
-					maxSubset = set_count;
-				}
-				else if((pleasures[set_count]<(maxPleasure+SmallNumber)) && (pleasures[set_count]>(maxPleasure-SmallNumber))){
-					if( find(subset[set_count].begin(), subset[set_count].end(), (m+n+1)) == subset[set_count].end()){//if the new equal solution is bounded, replace the max value anyway
-						maxPleasure = pleasures[set_count];
-						maxSolution = solution.second;
-						maxSubset = set_count;
-					}		
-				}					
-			}else{cout<<"inequality_check="<<inequality_check[set_count]<<endl;}
-		}else{cout<<endl;}		
-		
-	}	
-	cout<<"maxPleasure:"<<maxPleasure<<endl;
-	cout<<"maxSubset:"<<maxSubset<<endl;
-	cout<<"max solution: ";		
+	Equation equation(A, b);
+	pair<int, Column> solution = SolveEquation(equation);
+	
+/* 	cout<<"solution: ";		
 	cout.precision(PRECISION);
 	cout<<fixed;
-	for(auto ele : maxSolution)
+	for(auto ele : solution.second)
 		cout<<ele<<", ";
-	cout<<endl;
-	cout<<"maxSolution.empty():"<<maxSolution.empty()<<endl;
-	
-	if(!maxSolution.empty()){// in subset, the equation numbers are 1-based
-		if( find(subset[maxSubset].begin(), subset[maxSubset].end(), (m+n+1)) != subset[maxSubset].end()) // the vertex corresponding to the optimal solution has the last inequality among those m that define the vertex
-			return {1, {}}; // output "Infinity"
-		else
-			return {0, maxSolution}; // if the strict equality from the last inequality constraint is not met for the optimal solution, the solution is bounded
-	}
-	else // otherwise no solution
-		return {-1,{}};
-	
+	cout<<endl;	 */
   
 
-  //return solution;
+    return solution;
 }
 
 int main(){
